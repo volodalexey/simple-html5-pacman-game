@@ -18,8 +18,6 @@ async function run (): Promise<void> {
   const { spritesheet: { textures } } = loaderScene.getAssets()
   await SceneManager.changeScene(new MainScene({
     app: SceneManager.app,
-    viewWidth: SceneManager.width,
-    viewHeight: SceneManager.height,
     textures: {
       blockTexture: textures['block.png'],
       capBottomTexture: textures['capBottom.png'],

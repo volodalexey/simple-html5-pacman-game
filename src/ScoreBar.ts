@@ -1,13 +1,13 @@
 import { Container, Text } from 'pixi.js'
 
 export class ScoreBar extends Container {
-  public scoreOptions = {
+  static options = {
     padding: 20,
     textColor: 0xffffff,
-    textSize: 40
+    textSize: 20
   }
 
-  private _score = 100
+  private _score = 0
   public scoreText!: Text
 
   constructor () {
@@ -20,7 +20,7 @@ export class ScoreBar extends Container {
   }
 
   setup (): void {
-    const { scoreOptions } = this
+    const { options: scoreOptions } = ScoreBar
     const scoreText = new Text(`Score: ${this._score}`, {
       fontSize: scoreOptions.textSize,
       fill: scoreOptions.textColor

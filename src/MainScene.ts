@@ -1,5 +1,5 @@
 import { Container, type FederatedPointerEvent, Graphics, type Application, type Texture } from 'pixi.js'
-import { type ScoreBar } from './ScoreBar'
+import { ScoreBar } from './ScoreBar'
 import { Player } from './Player'
 import { logKeydown, logKeyup, logLayout, logPlayerBounds, logPointerEvent } from './logger'
 import { type IScene } from './SceneManager'
@@ -8,8 +8,6 @@ import { type IMapOptions, Map } from './Map'
 
 interface IShootingSceneOptions {
   app: Application
-  viewWidth: number
-  viewHeight: number
   textures: IMapOptions['textures']
 }
 
@@ -32,32 +30,38 @@ export class MainScene extends Container implements IScene {
     super()
     this.app = options.app
     this.setup(options)
-    this.draw(options)
     this.addEventLesteners()
   }
 
-  setup ({ viewWidth, viewHeight, textures }: IShootingSceneOptions): void {
+  setup ({ textures }: IShootingSceneOptions): void {
     this.background = new Graphics()
     this.addChild(this.background)
+
+    this.scoreBar = new ScoreBar()
+    this.addChild(this.scoreBar)
 
     this.map = new Map({
       app: this.app,
       textures
     })
+    this.map.position.set(this.scoreBar.x, this.scoreBar.y + this.scoreBar.height + ScoreBar.options.padding * 2)
     this.addChild(this.map)
+
+    this.drawBackground()
 
     this.player = new Player({})
     this.addChild(this.player)
 
-    this.startModal = new StartModal({ viewWidth, viewHeight })
+    this.startModal = new StartModal({ viewWidth: this.background.width, viewHeight: this.background.height })
     this.startModal.visible = false
     this.addChild(this.startModal)
   }
 
-  draw ({ viewWidth, viewHeight }: IShootingSceneOptions): void {
-    this.background.beginFill(this.backgroundSettings.color)
-    this.background.drawRect(0, 0, viewWidth, viewHeight)
-    this.background.endFill()
+  drawBackground (): void {
+    const { background, scoreBar, map } = this
+    background.beginFill(this.backgroundSettings.color)
+    background.drawRect(0, 0, map.width, scoreBar.height + ScoreBar.options.padding + map.height)
+    background.endFill()
   }
 
   handleResize (options: { viewWidth: number, viewHeight: number }): void {
@@ -70,9 +74,34 @@ export class MainScene extends Container implements IScene {
   }
 
   resizeBackground ({ viewWidth, viewHeight }: { viewWidth: number, viewHeight: number }): void {
-    logLayout(`bgw=${this.background.width} bgh=${this.background.height} vw=${viewWidth} vh=${viewHeight}`)
-    this.background.width = viewWidth
-    this.background.height = viewHeight
+    const availableWidth = viewWidth
+    const availableHeight = viewHeight
+    const totalWidth = this.background.width
+    const totalHeight = this.background.height
+    let scale = 1
+    if (totalHeight >= totalWidth) {
+      scale = availableHeight / totalHeight
+      if (scale * totalWidth > availableWidth) {
+        scale = availableWidth / totalWidth
+      }
+      logLayout(`By height (sc=${scale})`)
+    } else {
+      scale = availableWidth / totalWidth
+      logLayout(`By width (sc=${scale})`)
+      if (scale * totalHeight > availableHeight) {
+        scale = availableHeight / totalHeight
+      }
+    }
+    const occupiedWidth = Math.floor(totalWidth * scale)
+    const occupiedHeight = Math.floor(totalHeight * scale)
+    const x = availableWidth > occupiedWidth ? (availableWidth - occupiedWidth) / 2 : 0
+    const y = availableHeight > occupiedHeight ? (availableHeight - occupiedHeight) / 2 : 0
+    logLayout(`aw=${availableWidth} (ow=${occupiedWidth}) x=${x} ah=${availableHeight} (oh=${occupiedHeight}) y=${y}`)
+    this.x = x
+    this.width = occupiedWidth
+    this.y = y
+    this.height = occupiedHeight
+    logLayout(`x=${x} y=${y} w=${this.width} h=${this.height}`)
   }
 
   handleUpdate (): void {
