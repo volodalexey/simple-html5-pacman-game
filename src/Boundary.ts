@@ -7,7 +7,6 @@ interface IBoundaryOptions {
 }
 
 export class Boundary extends Sprite {
-  static cell = 40
   constructor ({ initX, initY, texture }: IBoundaryOptions) {
     super(texture)
     this.position.set(initX, initY)

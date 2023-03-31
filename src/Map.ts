@@ -6,16 +6,17 @@ import { PowerUp } from './PowerUp'
 /*
 ║ - vertical
 ═ - horizontal
-╔ - top left corner
 ╗ - top right corner
-╚ - bottom left corner
-╚ - bottom left corner
 ╝ - bottom right corner
+╔ - top left corner
+╚ - bottom left corner
 ■ - block
 . - dot
-╦ - horizontal top bottom
-╩ - vertical top top
-╬ - cross
+╦ - connector bottom
+╩ - connector top
+╣ - connector left
+╠ - connector right
+╬ - connector cross
 [ - cap left
 ] - cap right
 _ - cap bottom
@@ -25,7 +26,7 @@ P - power up
 
 const MAP = [
   ['╔', '═', '═', '═', '═', '═', '═', '═', '═', '═', '╗'],
-  ['║', '.', '.', '.', '.', '.', '.', '.', '.', '.', '║'],
+  ['║', ' ', '.', '.', '.', '.', '.', '.', '.', '.', '║'],
   ['║', '.', '■', '.', '[', '╦', ']', '.', '■', '.', '║'],
   ['║', '.', '.', '.', '.', '_', '.', '.', '.', '.', '║'],
   ['║', '.', '[', ']', '.', '.', '.', '[', ']', '.', '║'],
@@ -62,6 +63,7 @@ export interface IMapOptions {
 }
 
 export class Map extends Container {
+  static cell = 40
   public boundaries: Boundary[] = []
   public pellets: Pellet[] = []
   public powerUps: PowerUp[] = []
@@ -95,10 +97,10 @@ export class Map extends Container {
     const { boundaries, pellets, powerUps } = this
     MAP.forEach((row, i) => {
       row.forEach((symbol, j) => {
-        const initX = Boundary.cell * j
-        const initY = Boundary.cell * i
-        const centerX = initX + Boundary.cell / 2
-        const centerY = initY + Boundary.cell / 2
+        const initX = Map.cell * j
+        const initY = Map.cell * i
+        const centerX = initX + Map.cell / 2
+        const centerY = initY + Map.cell / 2
         switch (symbol) {
           case '═':
             boundaries.push(

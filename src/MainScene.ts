@@ -49,7 +49,11 @@ export class MainScene extends Container implements IScene {
 
     this.drawBackground()
 
-    this.player = new Player({})
+    this.player = new Player({
+      app: this.app,
+      centerX: this.map.x + Map.cell * 2 - Map.cell / 2,
+      centerY: this.map.y + Map.cell * 2 - Map.cell / 2
+    })
     this.addChild(this.player)
 
     this.startModal = new StartModal({ viewWidth: this.background.width, viewHeight: this.background.height })

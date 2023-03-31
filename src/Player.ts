@@ -1,8 +1,10 @@
-import { Sprite } from 'pixi.js'
+import { AnimatedSprite, Graphics, type Application, type Texture, Rectangle } from 'pixi.js'
 import { logPlayerMove } from './logger'
 
 export interface IPlayerOptions {
-  todo?: number
+  app: Application
+  centerX: number
+  centerY: number
 }
 
 export enum PlayerState {
@@ -12,12 +14,16 @@ export enum PlayerState {
   left = 'left',
 }
 
-export class Player extends Sprite {
+export class Player extends AnimatedSprite {
+  static texturesCache: Texture[] = []
   public pointerXDown: number | null = null
   public pointerYDown: number | null = null
   static options = {
+    radius: 15,
+    renderRadius: 100,
     moveSpeed: 6,
-    bulletSpeed: -10
+    fillColor: 0xbef264,
+    animationSpeed: 1
   }
 
   public velocity = {
@@ -25,27 +31,58 @@ export class Player extends Sprite {
     vy: 0
   }
 
+  static prepareTextures ({ app }: IPlayerOptions): void {
+    const { texturesCache, options: { renderRadius } } = Player
+    const radius = renderRadius
+    // whole circle first
+    texturesCache.push(app.renderer.generateTexture(
+      new Graphics().beginFill(0xffffff).drawCircle(radius / 2, radius / 2, radius)
+    ))
+    const splitCount = 10
+    const angleIncr = 1 / splitCount
+    const textures = []
+    for (let i = 1; i < splitCount + 1; i++) {
+      const pacman = new Graphics()
+      pacman.beginFill(0xffffff) // or context.fill()
+      const cx = radius
+      const cy = radius
+      pacman.moveTo(cx, cy)
+      pacman.arc(cx, cy, radius, angleIncr * i, -angleIncr * i)
+      pacman.lineTo(cx, cy)
+      pacman.endFill()
+      textures.push(app.renderer.generateTexture(pacman, { region: new Rectangle(0, 0, radius * 2, radius * 2) }))
+    }
+    texturesCache.push(...textures)
+    texturesCache.push(...textures.reverse())
+  }
+
   public state!: PlayerState
   constructor (options: IPlayerOptions) {
-    super()
+    Player.prepareTextures(options)
+    super(Player.texturesCache)
     this.anchor.set(0.5, 0.5)
+    this.scale.set(Player.options.radius / Player.options.renderRadius)
+    this.position.set(options.centerX, options.centerY)
+    this.tint = Player.options.fillColor
 
-    this.switchState(PlayerState.left)
+    this.animationSpeed = Player.options.animationSpeed
+    this.play()
+    this.switchState(PlayerState.right)
   }
 
   switchState (state: PlayerState): void {
     switch (state) {
       case PlayerState.top:
-        this.rotation = Math.PI / 2
+        // this.rotation = Math.PI / 2
         break
       case PlayerState.left:
-        this.rotation = Math.PI
+        // this.rotation = Math.PI
         break
       case PlayerState.right:
         this.rotation = 0
         break
       case PlayerState.bottom:
-        this.rotation = -Math.PI / 2
+        // this.rotation = -Math.PI / 2
         break
     }
     this.state = state
@@ -56,7 +93,15 @@ export class Player extends Sprite {
   }
 
   applyTopDirection (pressed: boolean): void {
-    this.pointerYDown = pressed ? -1 : null
+    this.pointerYDown = pressed
+      ? -1
+      : (this.pointerYDown === -1 ? null : this.pointerYDown)
+  }
+
+  applyBottomDirection (pressed: boolean): void {
+    this.pointerYDown = pressed
+      ? 1
+      : (this.pointerYDown === 1 ? null : this.pointerYDown)
   }
 
   applyLeftDirection (pressed: boolean): void {
