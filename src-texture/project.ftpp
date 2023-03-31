@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "version": "0.6.7"
+  },
+  "savePath": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture",
+  "images": [
+    {
+      "name": "block.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/block.png",
+      "folder": ""
+    },
+    {
+      "name": "capBottom.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/capBottom.png",
+      "folder": ""
+    },
+    {
+      "name": "capLeft.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/capLeft.png",
+      "folder": ""
+    },
+    {
+      "name": "capRight.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/capRight.png",
+      "folder": ""
+    },
+    {
+      "name": "capTop.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/capTop.png",
+      "folder": ""
+    },
+    {
+      "name": "pipeConnectorBottom.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/pipeConnectorBottom.png",
+      "folder": ""
+    },
+    {
+      "name": "pipeConnectorLeft.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/pipeConnectorLeft.png",
+      "folder": ""
+    },
+    {
+      "name": "pipeConnectorRight.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/pipeConnectorRight.png",
+      "folder": ""
+    },
+    {
+      "name": "pipeConnectorTop.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/pipeConnectorTop.png",
+      "folder": ""
+    },
+    {
+      "name": "pipeCornerBottomLeft.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/pipeCornerBottomLeft.png",
+      "folder": ""
+    },
+    {
+      "name": "pipeCornerBottomRight.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/pipeCornerBottomRight.png",
+      "folder": ""
+    },
+    {
+      "name": "pipeCornerTopLeft.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/pipeCornerTopLeft.png",
+      "folder": ""
+    },
+    {
+      "name": "pipeCornerTopRight.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/pipeCornerTopRight.png",
+      "folder": ""
+    },
+    {
+      "name": "pipeCross.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/pipeCross.png",
+      "folder": ""
+    },
+    {
+      "name": "pipeHorizontal.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/pipeHorizontal.png",
+      "folder": ""
+    },
+    {
+      "name": "pipeVertical.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture/pipeVertical.png",
+      "folder": ""
+    }
+  ],
+  "folders": [],
+  "packOptions": {
+    "textureName": "spritesheet",
+    "textureFormat": "png",
+    "removeFileExtension": false,
+    "prependFolderName": true,
+    "base64Export": false,
+    "tinify": false,
+    "tinifyKey": "",
+    "scale": 1,
+    "filter": "none",
+    "exporter": "JSON (hash)",
+    "fileName": "pack-result",
+    "savePath": "/mnt/mystorage/js_projects/simple-html5-pacman-game/src-texture",
+    "width": 2048,
+    "height": 2048,
+    "fixedSize": false,
+    "powerOfTwo": false,
+    "padding": 1,
+    "extrude": 0,
+    "allowRotation": false,
+    "allowTrim": false,
+    "trimMode": "trim",
+    "alphaThreshold": "0",
+    "detectIdentical": true,
+    "packer": "MaxRectsPacker",
+    "packerMethod": "Smart"
+  }
+}
