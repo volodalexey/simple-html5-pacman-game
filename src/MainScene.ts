@@ -7,6 +7,9 @@ import { StartModal } from './StartModal'
 import { type IMapOptions, Map } from './Map'
 import { Pellet } from './Pellet'
 import { Ghost } from './Ghost'
+import { PowerUp } from './PowerUp'
+import { Collision } from './Collision'
+import { compareArrays } from './utils'
 
 interface IShootingSceneOptions {
   app: Application
@@ -164,7 +167,36 @@ export class MainScene extends Container implements IScene {
           ghost.removeFromParent()
         } else {
           this.endGame()
+          return
         }
+      }
+    }
+
+    // win condition goes here
+    if (this.map.pellets.length === 0) {
+      this.endGame()
+      return
+    }
+
+    // power ups go
+    for (let i = this.map.powerUps.length - 1; i >= 0; i--) {
+      const powerUp = this.map.powerUps[i]
+
+      // player collides with powerup
+      if (
+        Math.hypot(
+          powerUp.x - this.player.x,
+          powerUp.y - this.player.y
+        ) <
+      PowerUp.options.radius + Player.options.radius
+      ) {
+        this.map.powerUps.splice(i, 1)
+        powerUp.removeFromParent()
+
+        // make ghosts scared
+        this.ghosts.forEach((ghost) => {
+          ghost.setIsScared(true)
+        })
       }
     }
 
@@ -184,11 +216,14 @@ export class MainScene extends Container implements IScene {
         this.scoreBar.addScore(10)
       }
     }
+
     if (this.player.checkIfMove({ vx: this.player.velocity.vx, vy: this.player.velocity.vy, boundaries: this.map.boundaries, padding })) {
       logPlayerCheck('Full stop')
     }
     this.player.updatePosition()
     this.player.updateState()
+
+    this.calcGhostsMovement()
   }
 
   addEventLesteners (): void {
@@ -273,5 +308,122 @@ export class MainScene extends Container implements IScene {
   beginEndGame (): void {
     this.player.setKilled()
     this.endGame()
+  }
+
+  calcGhostsMovement (): void {
+    const padding = (Map.cell - Ghost.options.radius * 2) / 2 - 1
+    this.ghosts.forEach((ghost) => {
+      ghost.updatePosition()
+
+      const collisions: typeof ghost.prevCollisions = []
+      const ghostBounds = ghost.getPaddingBounds(padding)
+      this.map.boundaries.forEach((boundary) => {
+        const boundaryBounds = boundary.getMyBounds()
+        if (
+          !collisions.includes('right') &&
+          Collision.checkCollisionMBxB(
+            {
+              bounds: ghostBounds,
+              velocity: {
+                vx: Ghost.options.moveSpeed,
+                vy: 0
+              }
+            },
+            boundaryBounds
+          )
+        ) {
+          collisions.push('right')
+        }
+
+        if (
+          !collisions.includes('left') &&
+          Collision.checkCollisionMBxB(
+            {
+              bounds: ghostBounds,
+              velocity: {
+                vx: -Ghost.options.moveSpeed,
+                vy: 0
+              }
+            },
+            boundaryBounds
+          )
+        ) {
+          collisions.push('left')
+        }
+
+        if (
+          !collisions.includes('up') &&
+          Collision.checkCollisionMBxB(
+            {
+              bounds: ghostBounds,
+              velocity: {
+                vx: 0,
+                vy: -Ghost.options.moveSpeed
+              }
+            },
+            boundaryBounds
+          )
+        ) {
+          collisions.push('up')
+        }
+
+        if (
+          !collisions.includes('down') &&
+          Collision.checkCollisionMBxB(
+            {
+              bounds: ghostBounds,
+              velocity: {
+                vx: 0,
+                vy: Ghost.options.moveSpeed
+              }
+            },
+            boundaryBounds
+          )
+        ) {
+          collisions.push('down')
+        }
+      })
+
+      if (collisions.length > ghost.prevCollisions.length) {
+        ghost.prevCollisions = collisions
+      }
+
+      if (!compareArrays(collisions, ghost.prevCollisions)) {
+        if (ghost.velocity.vx > 0) ghost.prevCollisions.push('right')
+        else if (ghost.velocity.vx < 0) ghost.prevCollisions.push('left')
+        else if (ghost.velocity.vy < 0) ghost.prevCollisions.push('up')
+        else if (ghost.velocity.vy > 0) ghost.prevCollisions.push('down')
+
+        const pathways = ghost.prevCollisions.filter((collision) => {
+          return !collisions.includes(collision)
+        })
+
+        const direction = pathways[Math.floor(Math.random() * pathways.length)]
+
+        switch (direction) {
+          case 'down':
+            ghost.velocity.vy = Ghost.options.moveSpeed
+            ghost.velocity.vx = 0
+            break
+
+          case 'up':
+            ghost.velocity.vy = -Ghost.options.moveSpeed
+            ghost.velocity.vx = 0
+            break
+
+          case 'right':
+            ghost.velocity.vy = 0
+            ghost.velocity.vx = Ghost.options.moveSpeed
+            break
+
+          case 'left':
+            ghost.velocity.vy = 0
+            ghost.velocity.vx = -Ghost.options.moveSpeed
+            break
+        }
+
+        ghost.prevCollisions = []
+      }
+    })
   }
 }

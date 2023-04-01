@@ -10,15 +10,18 @@ export interface IGhostOptions {
 export class Ghost extends AnimatedSprite {
   static texturesCache: Texture[] = []
   public isScared = false
+  public fillColor!: number
+  public prevCollisions: Array<'up' | 'right' | 'down' | 'left'> = []
   static options = {
     radius: 15,
     renderRadius: 100,
     moveSpeed: 2,
-    animationSpeed: 1
+    animationSpeed: 1,
+    scaredFillColor: 0x0000ff
   }
 
   public velocity = {
-    vx: 0,
+    vx: Ghost.options.moveSpeed,
     vy: 0
   }
 
@@ -55,12 +58,13 @@ export class Ghost extends AnimatedSprite {
     this.scale.set(Ghost.options.radius / Ghost.options.renderRadius)
     this.position.set(options.centerX, options.centerY)
     this.tint = options.fillColor
+    this.fillColor = options.fillColor
 
     this.animationSpeed = Ghost.options.animationSpeed
     this.play()
   }
 
-  getMyBounds (): {
+  getPaddingBounds (padding = 0): {
     top: number
     right: number
     bottom: number
@@ -69,16 +73,31 @@ export class Ghost extends AnimatedSprite {
     const centerX = this.x
     const centerY = this.y
     const { radius } = Ghost.options
-    return {
+    const bounds = {
       top: centerY - radius,
       right: centerX + radius,
       bottom: centerY + radius,
       left: centerX - radius
+    }
+    return {
+      left: bounds.left - padding,
+      right: bounds.right + padding,
+      top: bounds.top - padding,
+      bottom: bounds.bottom + padding
     }
   }
 
   updatePosition (): void {
     this.position.x += this.velocity.vx
     this.position.y += this.velocity.vy
+  }
+
+  setIsScared (scared: boolean): void {
+    this.isScared = scared
+    this.tint = Ghost.options.scaredFillColor
+    setTimeout(() => {
+      this.isScared = false
+      this.tint = this.fillColor
+    }, 5000)
   }
 }

@@ -15,26 +15,6 @@ interface IMoveBound {
   }
 }
 
-interface ICircle {
-  position: {
-    x: number
-    y: number
-  }
-  radius: number
-  velocity: {
-    vx: number
-    vy: number
-  }
-}
-
-interface IRect {
-  position: {
-    x: number
-    y: number
-  }
-  width: number
-  height: number
-}
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Collision {
   static checkCollisionMBxB ({ bounds, velocity }: IMoveBound, b: IBound): boolean {
@@ -50,19 +30,6 @@ export class Collision {
       bounds.right + velocity.vx >= b.left &&
       bounds.bottom + velocity.vy >= b.top &&
       bounds.left + velocity.vx <= b.right
-    )
-  }
-
-  static checkCollisionCxR (circle: ICircle, rectangle: IRect, padding = 0): boolean {
-    return (
-      circle.position.y - circle.radius + circle.velocity.vy <=
-        rectangle.position.y + rectangle.height + padding &&
-      circle.position.x + circle.radius + circle.velocity.vx >=
-        rectangle.position.x - padding &&
-      circle.position.y + circle.radius + circle.velocity.vy >=
-        rectangle.position.y - padding &&
-      circle.position.x - circle.radius + circle.velocity.vx <=
-        rectangle.position.x + rectangle.width + padding
     )
   }
 }

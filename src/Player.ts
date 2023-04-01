@@ -138,7 +138,7 @@ export class Player extends AnimatedSprite {
 
   applyPointerToDirection (pressed: boolean | undefined, x: number, y: number): void {
     if (pressed === true || (pressed === undefined && this.isPointerDown())) {
-      const myBounds = this.getDiffBounds()
+      const myBounds = this.getPaddingBounds()
       const pX = this.x
       const pY = this.y
       const absDiffX = Math.abs(x - pX)
@@ -239,7 +239,7 @@ export class Player extends AnimatedSprite {
     this.velocity.vy = 0
   }
 
-  getDiffBounds (): {
+  getPaddingBounds (padding = 0): {
     top: number
     right: number
     bottom: number
@@ -248,27 +248,27 @@ export class Player extends AnimatedSprite {
     const centerX = this.x
     const centerY = this.y
     const { radius } = Player.options
-    return {
+    const bounds = {
       top: centerY - radius,
       right: centerX + radius,
       bottom: centerY + radius,
       left: centerX - radius
     }
+    return {
+      left: bounds.left - padding,
+      right: bounds.right + padding,
+      top: bounds.top - padding,
+      bottom: bounds.bottom + padding
+    }
   }
 
   checkIfMove ({ vx = null, vy = null, boundaries, padding = 0 }: { vx?: number | null, vy?: number | null, boundaries: Boundary[], padding?: number }): boolean {
-    const playerBounds = this.getDiffBounds()
-    const playerBoundsWithPadding = {
-      left: playerBounds.left - padding,
-      right: playerBounds.right + padding,
-      top: playerBounds.top - padding,
-      bottom: playerBounds.bottom + padding
-    }
+    const playerBounds = this.getPaddingBounds(padding)
     const collideIndex = boundaries.findIndex(boundary => {
       const boundaryBounds = boundary.getMyBounds()
       const isCollide = Collision.checkCollisionMBxB(
         {
-          bounds: playerBoundsWithPadding,
+          bounds: playerBounds,
           velocity: {
             vx: vx ?? 0,
             vy: vy ?? 0
@@ -282,17 +282,8 @@ export class Player extends AnimatedSprite {
       const collideWithBoundary = boundaries[collideIndex]
       logPlayerCheck(`Collide vx=${vx} vy=${vy}`)
       const boundaryBounds = collideWithBoundary.getMyBounds()
-      logPlayerCheck(`Player my bounds t=${playerBounds.top}(${playerBoundsWithPadding.top}) r=${playerBounds.right}(${playerBoundsWithPadding.right}) b=${playerBounds.bottom}(${playerBoundsWithPadding.bottom}) l=${playerBounds.left}(${playerBoundsWithPadding.left}) pad=${padding}`)
+      logPlayerCheck(`Player my bounds t=${playerBounds.top} r=${playerBounds.right} b=${playerBounds.bottom} l=${playerBounds.left} pad=${padding}`)
       logPlayerCheck(`Boundary my bounds t=${boundaryBounds.top} r=${boundaryBounds.right} b=${boundaryBounds.bottom} l=${boundaryBounds.left} pad=${padding} "${collideWithBoundary.code}" i=${collideIndex}`)
-      if (logPlayerCheck.enabled) {
-        const bounds = playerBoundsWithPadding
-        const velocity = { vx: vx ?? 0, vy: vy ?? 0 }
-        const b = collideWithBoundary.getMyBounds()
-        logPlayerCheck(`${bounds.top + velocity.vy} <= ${b.bottom} [${bounds.top + velocity.vy <= b.bottom}]
-        ${bounds.right + velocity.vx} >= ${b.left} [${bounds.right + velocity.vx >= b.left}]
-        ${bounds.bottom + velocity.vy} >= ${b.top} [${bounds.bottom + velocity.vy >= b.top}]
-        ${bounds.left + velocity.vx} <= ${b.right} [${bounds.left + velocity.vx <= b.right}]`)
-      }
       if (vx != null) {
         this.velocity.vx = 0
       }
