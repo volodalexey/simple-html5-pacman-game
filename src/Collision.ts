@@ -1,4 +1,4 @@
-import { logRectCollision } from './logger'
+import { logCollision, logPlayerVelocity } from './logger'
 
 interface IBound {
   top: number
@@ -6,27 +6,63 @@ interface IBound {
   bottom: number
   left: number
 }
+
+interface IMoveBound {
+  bounds: IBound
+  velocity: {
+    vx: number
+    vy: number
+  }
+}
+
+interface ICircle {
+  position: {
+    x: number
+    y: number
+  }
+  radius: number
+  velocity: {
+    vx: number
+    vy: number
+  }
+}
+
+interface IRect {
+  position: {
+    x: number
+    y: number
+  }
+  width: number
+  height: number
+}
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Collision {
-  static checkCollision (a: IBound, b: IBound): number {
-    logRectCollision(`r1:: l=${a.left} r=${a.right} t=${a.top} b=${a.bottom} <> r2:: l=${b.left} r=${b.right} t=${b.top} b=${b.bottom}`)
-    const rightmostLeft = a.left < b.left ? b.left : a.left
-    const leftmostRight = a.right > b.right ? b.right : a.right
+  static checkCollisionMBxB ({ bounds, velocity }: IMoveBound, b: IBound): boolean {
+    logPlayerVelocity(`collision vx=${velocity.vx} vy=${velocity.vy}`)
+    /* eslint-disable @typescript-eslint/restrict-template-expressions */
+    logCollision(`${bounds.top + velocity.vy} <= ${b.bottom} [${bounds.top + velocity.vy <= b.bottom}]
+    ${bounds.right + velocity.vx} >= ${b.left} [${bounds.right + velocity.vx >= b.left}]
+    ${bounds.bottom + velocity.vy} >= ${b.top} [${bounds.bottom + velocity.vy >= b.top}]
+    ${bounds.left + velocity.vx} <= ${b.right} [${bounds.left + velocity.vx <= b.right}]`)
+    /* eslint-enable @typescript-eslint/restrict-template-expressions */
+    return (
+      bounds.top + velocity.vy <= b.bottom &&
+      bounds.right + velocity.vx >= b.left &&
+      bounds.bottom + velocity.vy >= b.top &&
+      bounds.left + velocity.vx <= b.right
+    )
+  }
 
-    logRectCollision(`left-m-Right=${leftmostRight} right-m-Left=${rightmostLeft}`)
-    if (leftmostRight <= rightmostLeft) {
-      return 0
-    }
-
-    const bottommostTop = a.top < b.top ? b.top : a.top
-    const topmostBottom = a.bottom > b.bottom ? b.bottom : a.bottom
-    logRectCollision(`bottom-m-Top=${bottommostTop} top-m-Bottom=${topmostBottom}`)
-
-    if (topmostBottom > bottommostTop) {
-      const squareIntersection = (leftmostRight - rightmostLeft) * (topmostBottom - bottommostTop)
-      const squareTarget = (b.right - b.left) * (b.bottom - b.top)
-      return squareIntersection / squareTarget
-    }
-    return 0
+  static checkCollisionCxR (circle: ICircle, rectangle: IRect, padding = 0): boolean {
+    return (
+      circle.position.y - circle.radius + circle.velocity.vy <=
+        rectangle.position.y + rectangle.height + padding &&
+      circle.position.x + circle.radius + circle.velocity.vx >=
+        rectangle.position.x - padding &&
+      circle.position.y + circle.radius + circle.velocity.vy >=
+        rectangle.position.y - padding &&
+      circle.position.x - circle.radius + circle.velocity.vx <=
+        rectangle.position.x + rectangle.width + padding
+    )
   }
 }

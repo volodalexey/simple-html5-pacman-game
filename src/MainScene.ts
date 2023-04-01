@@ -1,10 +1,12 @@
 import { Container, type FederatedPointerEvent, Graphics, type Application, type Texture } from 'pixi.js'
 import { ScoreBar } from './ScoreBar'
 import { Player } from './Player'
-import { logKeydown, logKeyup, logLayout, logPlayerBounds, logPointerEvent } from './logger'
+import { logKeydown, logKeyup, logLayout, logPlayerCheck, logPointerEvent } from './logger'
 import { type IScene } from './SceneManager'
 import { StartModal } from './StartModal'
 import { type IMapOptions, Map } from './Map'
+import { Pellet } from './Pellet'
+import { Ghost } from './Ghost'
 
 interface IShootingSceneOptions {
   app: Application
@@ -25,6 +27,7 @@ export class MainScene extends Container implements IScene {
   public scoreBar!: ScoreBar
   public startModal!: StartModal
   public invaderTexture!: Texture
+  public ghosts: Ghost[] = []
 
   constructor (options: IShootingSceneOptions) {
     super()
@@ -51,14 +54,36 @@ export class MainScene extends Container implements IScene {
 
     this.player = new Player({
       app: this.app,
-      centerX: this.map.x + Map.cell * 2 - Map.cell / 2,
-      centerY: this.map.y + Map.cell * 2 - Map.cell / 2
+      centerX: Map.cell + Map.cell / 2,
+      centerY: Map.cell + Map.cell / 2
     })
-    this.addChild(this.player)
+    this.map.addChild(this.player)
+
+    this.setupGhosts()
 
     this.startModal = new StartModal({ viewWidth: this.background.width, viewHeight: this.background.height })
     this.startModal.visible = false
     this.addChild(this.startModal)
+  }
+
+  setupGhosts (): void {
+    for (const ghost of this.ghosts) {
+      ghost.removeFromParent()
+    }
+    this.ghosts = []
+    this.ghosts.push(new Ghost({
+      app: this.app,
+      centerX: Map.cell * 6 + Map.cell / 2,
+      centerY: Map.cell + Map.cell / 2,
+      fillColor: 0xc2410c
+    }))
+    this.ghosts.push(new Ghost({
+      app: this.app,
+      centerX: Map.cell * 6 + Map.cell / 2,
+      centerY: Map.cell * 3 + Map.cell / 2,
+      fillColor: 0xdb2777
+    }))
+    this.ghosts.forEach(g => this.map.addChild(g))
   }
 
   drawBackground (): void {
@@ -70,11 +95,11 @@ export class MainScene extends Container implements IScene {
 
   handleResize (options: { viewWidth: number, viewHeight: number }): void {
     this.resizeBackground(options)
-    this.centerModal(options)
+    this.centerModal()
   }
 
-  centerModal ({ viewWidth, viewHeight }: { viewWidth: number, viewHeight: number }): void {
-    this.startModal.position.set(viewWidth / 2 - this.startModal.boxOptions.width / 2, viewHeight / 2 - this.startModal.boxOptions.height / 2)
+  centerModal (): void {
+    this.startModal.position.set(this.background.width / 2 - this.startModal.boxOptions.width / 2, this.background.height / 2 - this.startModal.boxOptions.height / 2)
   }
 
   resizeBackground ({ viewWidth, viewHeight }: { viewWidth: number, viewHeight: number }): void {
@@ -112,54 +137,92 @@ export class MainScene extends Container implements IScene {
     if (this.gameEnded) {
       return
     }
-    this.player.updateVelocity()
-    const { velocity, position } = this.player
-    const playerBounds = this.player.getBounds()
-    logPlayerBounds(`pl=${playerBounds.left} pr=${playerBounds.right} pw=${playerBounds.width} ph=${playerBounds.height}`)
-    if (playerBounds.left + velocity.vx < this.background.x) {
-      velocity.vx = 0
-      position.x = this.background.x + playerBounds.width / 2
-    } else if (playerBounds.right + velocity.vx > this.background.width) {
-      velocity.vx = 0
-      position.x = this.background.width - playerBounds.width / 2
-    } else {
-      position.x += velocity.vx
+    const padding = (Map.cell - Player.options.radius * 2) / 2 - 1
+    if (this.player.pointerYDown !== null && this.player.lastPointerDirection === 'top') {
+      this.player.checkIfMoveUp(this.map.boundaries, padding)
+    } else if (this.player.pointerYDown !== null && this.player.lastPointerDirection === 'bottom') {
+      this.player.checkIfMoveDown(this.map.boundaries, padding)
+    } else if (this.player.pointerXDown !== null && this.player.lastPointerDirection === 'left') {
+      this.player.checkIfMoveLeft(this.map.boundaries, padding)
+    } else if (this.player.pointerXDown !== null && this.player.lastPointerDirection === 'right') {
+      this.player.checkIfMoveRight(this.map.boundaries, padding)
     }
+
+    // detect collision between ghosts and player
+    for (let i = this.ghosts.length - 1; i >= 0; i--) {
+      const ghost = this.ghosts[i]
+      // ghost touches player
+      if (
+        Math.hypot(
+          ghost.x - this.player.x,
+          ghost.y - this.player.y
+        ) <
+      Ghost.options.radius + Player.options.radius
+      ) {
+        if (ghost.isScared) {
+          this.ghosts.splice(i, 1)
+          ghost.removeFromParent()
+        } else {
+          this.endGame()
+        }
+      }
+    }
+
+    // touch pellets here
+    for (let i = this.map.pellets.length - 1; i >= 0; i--) {
+      const pellet = this.map.pellets[i]
+
+      if (
+        Math.hypot(
+          pellet.position.x - this.player.x,
+          pellet.position.y - this.player.y
+        ) <
+      Pellet.options.radius + Player.options.radius
+      ) {
+        this.map.pellets.splice(i, 1)
+        pellet.removeFromParent()
+        this.scoreBar.addScore(10)
+      }
+    }
+    if (this.player.checkIfMove({ vx: this.player.velocity.vx, vy: this.player.velocity.vy, boundaries: this.map.boundaries, padding })) {
+      logPlayerCheck('Full stop')
+    }
+    this.player.updatePosition()
     this.player.updateState()
   }
 
   addEventLesteners (): void {
     this.interactive = true
-    this.on('pointerdown', this.handlePlayerStartMove)
-    this.on('pointermove', this.handlePlayerKeepMove)
-    this.on('pointerup', this.handlePlayerStopMove)
+    this.on('pointerdown', this.handlePointerDown)
+    this.on('pointermove', this.handlePointerMove)
+    this.on('pointerup', this.handlePointerUp)
     window.addEventListener('keydown', this.handleKeyDown)
     window.addEventListener('keyup', this.handleKeyUp)
     this.startModal.on('click', this.startGame)
   }
 
   handlePlayerMove (pressed: boolean | undefined, e: FederatedPointerEvent): void {
-    const point = this.toLocal(e.global)
-    logPointerEvent(`${e.type} px=${point.x} py=${point.y}`)
-    this.player.handleMove(pressed, point.x, point.y)
+    const pointerPoint = this.map.toLocal(e.global)
+    logPointerEvent(`${e.type} px=${pointerPoint.x} py=${pointerPoint.y}`)
+    this.player.applyPointerToDirection(pressed, pointerPoint.x, pointerPoint.y)
   }
 
-  handlePlayerStartMove = (e: FederatedPointerEvent): void => {
+  handlePointerDown = (e: FederatedPointerEvent): void => {
     this.handlePlayerMove(true, e)
   }
 
-  handlePlayerKeepMove = (e: FederatedPointerEvent): void => {
+  handlePointerMove = (e: FederatedPointerEvent): void => {
     this.handlePlayerMove(undefined, e)
   }
 
-  handlePlayerStopMove = (e: FederatedPointerEvent): void => {
+  handlePointerUp = (e: FederatedPointerEvent): void => {
     this.handlePlayerMove(false, e)
   }
 
   handleKeyDown = (e: KeyboardEvent): void => {
     logKeydown(`${e.code} ${e.key}`)
     switch (e.code) {
-      case 'KeyW': case 'ArrowUp': case 'Space': case 'ShiftLeft':
+      case 'KeyW': case 'ArrowUp':
         this.player.applyTopDirection(true)
         break
       case 'KeyA': case 'ArrowLeft':
@@ -168,13 +231,16 @@ export class MainScene extends Container implements IScene {
       case 'KeyD':case 'ArrowRight':
         this.player.applyRightDirection(true)
         break
+      case 'KeyS': case 'ArrowDown':
+        this.player.applyBottomDirection(true)
+        break
     }
   }
 
   handleKeyUp = (e: KeyboardEvent): void => {
     logKeyup(`${e.code} ${e.key}`)
     switch (e.code) {
-      case 'KeyW': case 'ArrowUp': case 'Space': case 'ShiftLeft':
+      case 'KeyW': case 'ArrowUp':
         this.player.applyTopDirection(false)
         break
       case 'KeyA': case 'ArrowLeft':
@@ -183,12 +249,18 @@ export class MainScene extends Container implements IScene {
       case 'KeyD':case 'ArrowRight':
         this.player.applyRightDirection(false)
         break
+      case 'KeyS': case 'ArrowDown':
+        this.player.applyBottomDirection(false)
+        break
     }
   }
 
   startGame = (): void => {
     this.startModal.visible = false
     this.scoreBar.clearScore()
+    this.map.restart()
+    this.setupGhosts()
+    this.player.restart()
     this.gameEnded = false
   }
 

@@ -67,34 +67,39 @@ export class Map extends Container {
   public boundaries: Boundary[] = []
   public pellets: Pellet[] = []
   public powerUps: PowerUp[] = []
+  public app!: Application
+  public textures!: IMapOptions['textures']
 
   constructor (options: IMapOptions) {
     super()
-    this.setup(options)
+    this.app = options.app
+    this.textures = options.textures
+    this.setup()
   }
 
-  setup ({
-    app,
-    textures: {
-      pipeHorizontalTexture,
-      pipeVerticalTexture,
-      pipeCornerTopLeftTexture,
-      pipeCornerTopRightTexture,
-      pipeCornerBottomLeftTexture,
-      pipeCornerBottomRightTexture,
-      blockTexture,
-      capLeftTexture,
-      capRightTexture,
-      capTopTexture,
-      capBottomTexture,
-      pipeCrossTexture,
-      pipeConnectorTopTexture,
-      pipeConnectorBottomTexture,
-      pipeConnectorLeftTexture,
-      pipeConnectorRightTexture
-    }
-  }: IMapOptions): void {
-    const { boundaries, pellets, powerUps } = this
+  setup (): void {
+    const {
+      boundaries, pellets, powerUps,
+      app,
+      textures: {
+        pipeHorizontalTexture,
+        pipeVerticalTexture,
+        pipeCornerTopLeftTexture,
+        pipeCornerTopRightTexture,
+        pipeCornerBottomLeftTexture,
+        pipeCornerBottomRightTexture,
+        blockTexture,
+        capLeftTexture,
+        capRightTexture,
+        capTopTexture,
+        capBottomTexture,
+        pipeCrossTexture,
+        pipeConnectorTopTexture,
+        pipeConnectorBottomTexture,
+        pipeConnectorLeftTexture,
+        pipeConnectorRightTexture
+      }
+    } = this
     MAP.forEach((row, i) => {
       row.forEach((symbol, j) => {
         const initX = Map.cell * j
@@ -105,6 +110,7 @@ export class Map extends Container {
           case '═':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: pipeHorizontalTexture
@@ -115,6 +121,7 @@ export class Map extends Container {
           case '║':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: pipeVerticalTexture
@@ -125,6 +132,7 @@ export class Map extends Container {
           case '╔':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: pipeCornerTopLeftTexture
@@ -135,6 +143,7 @@ export class Map extends Container {
           case '╗':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: pipeCornerTopRightTexture
@@ -145,6 +154,7 @@ export class Map extends Container {
           case '╝':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: pipeCornerBottomRightTexture
@@ -155,6 +165,7 @@ export class Map extends Container {
           case '╚':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: pipeCornerBottomLeftTexture
@@ -165,6 +176,7 @@ export class Map extends Container {
           case '■':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: blockTexture
@@ -175,6 +187,7 @@ export class Map extends Container {
           case '[':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: capLeftTexture
@@ -185,6 +198,7 @@ export class Map extends Container {
           case ']':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: capRightTexture
@@ -195,6 +209,7 @@ export class Map extends Container {
           case '_':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: capBottomTexture
@@ -205,6 +220,7 @@ export class Map extends Container {
           case '^':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: capTopTexture
@@ -215,6 +231,7 @@ export class Map extends Container {
           case '╬':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: pipeCrossTexture
@@ -225,6 +242,7 @@ export class Map extends Container {
           case '╩':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: pipeConnectorTopTexture
@@ -235,6 +253,7 @@ export class Map extends Container {
           case '╠':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: pipeConnectorRightTexture
@@ -245,6 +264,7 @@ export class Map extends Container {
           case '╦':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: pipeConnectorBottomTexture
@@ -255,6 +275,7 @@ export class Map extends Container {
           case '╣':
             boundaries.push(
               new Boundary({
+                code: symbol,
                 initX,
                 initY,
                 texture: pipeConnectorLeftTexture
@@ -284,6 +305,28 @@ export class Map extends Container {
         }
       })
     })
-    boundaries.concat(pellets).concat(powerUps).forEach(item => this.addChild(item))
+    boundaries.forEach(item => this.addChild(item))
+    pellets.forEach(item => this.addChild(item))
+    powerUps.forEach(item => this.addChild(item))
+  }
+
+  cleanFromAll (): void {
+    for (const boundary of this.boundaries) {
+      boundary.removeFromParent()
+    }
+    this.boundaries = []
+    for (const pellet of this.pellets) {
+      pellet.removeFromParent()
+    }
+    this.pellets = []
+    for (const powerUp of this.powerUps) {
+      powerUp.removeFromParent()
+    }
+    this.powerUps = []
+  }
+
+  restart (): void {
+    this.cleanFromAll()
+    this.setup()
   }
 }
